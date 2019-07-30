@@ -1,8 +1,15 @@
 import asyncio
+import threading
 
 from gi.repository import GLib
 
 from . import glib_selector
+
+
+__all__ = (
+    'GLibEventLoop',
+    'GLibEventLoopPolicy',
+)
 
 
 class GLibEventLoop(asyncio.SelectorEventLoop):
@@ -11,3 +18,13 @@ class GLibEventLoop(asyncio.SelectorEventLoop):
             main_context = GLib.MainContext.default()
         selector = glib_selector.GLibSelector(main_context)
         super().__init__(selector)
+
+
+class GLibEventLoopPolicy(asyncio.DefaultEventLoopPolicy):
+
+    def new_event_loop(self):
+        if threading.current_thread() != threading.main_thread():
+            raise RuntimeError("GLibEventLoopPolicy only allows the main "
+                               "thread to create event loops")
+        context = GLib.MainContext.default()
+        return GLibEventLoop(context)

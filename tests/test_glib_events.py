@@ -13,3 +13,29 @@ class GLibEventLoopTests(UnixEventLoopTestsMixin, test_utils.TestCase):
 
     def test_read_pipe(self):
         raise unittest.SkipTest("TODO")
+
+
+class GLibEventLoopPolicyTests(unittest.TestCase):
+
+    def create_policy(self):
+        return glib_events.GLibEventLoopPolicy()
+
+    def test_get_event_loop(self):
+        policy = self.create_policy()
+        loop = policy.get_event_loop()
+        self.assertIsInstance(loop, glib_events.GLibEventLoop)
+        self.assertIs(loop, policy.get_event_loop())
+        loop.close()
+
+    def test_new_event_loop(self):
+        policy = self.create_policy()
+        loop = policy.get_event_loop()
+        self.assertIsInstance(loop, glib_events.GLibEventLoop)
+        loop.close()
+
+    def test_set_event_loop(self):
+        policy = self.create_policy()
+        loop = policy.new_event_loop()
+        policy.set_event_loop(loop)
+        self.assertIs(loop, policy.get_event_loop())
+        loop.close()
