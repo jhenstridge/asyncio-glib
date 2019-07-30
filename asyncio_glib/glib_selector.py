@@ -3,15 +3,28 @@ import selectors
 from gi.repository import GLib
 
 
+__all__ = (
+    'GLibSelector',
+)
+
+
+# The override for GLib.MainLoop.run installs a signal wakeup fd,
+# which interferes with asyncio signal handlers.  Try to get the
+# direct version.
+try:
+    g_main_loop_run = super(GLib.MainLoop, GLib.MainLoop).run
+except AttributeError:
+    g_main_loop_run = GLib.MainLoop.run
+
+
 class _SelectorSource(GLib.Source):
     """A GLib source that gathers selector """
 
-    def __init__(self):
+    def __init__(self, main_loop):
         super().__init__()
         self._fd_to_tag = {}
         self._fd_to_events = {}
-        self._ready = False
-        self.set_callback(lambda source: GLib.SOURCE_CONTINUE)
+        self._main_loop = main_loop
 
     def prepare(self):
         return False, 0
@@ -20,7 +33,6 @@ class _SelectorSource(GLib.Source):
         return False
 
     def dispatch(self, callback, args):
-        self._ready = True
         for (fd, tag) in self._fd_to_tag.items():
             condition = self.query_unix_fd(tag)
             events = self._fd_to_events.setdefault(fd, 0)
@@ -29,6 +41,7 @@ class _SelectorSource(GLib.Source):
             if condition & GLib.IOCondition.OUT:
                 events |= selectors.EVENT_WRITE
             self._fd_to_events[fd] = events
+        self._main_loop.quit()
         return GLib.SOURCE_CONTINUE
 
     def register(self, fd, events):
@@ -45,14 +58,10 @@ class _SelectorSource(GLib.Source):
         tag = self._fd_to_tag.pop(fd)
         self.remove_unix_fd(tag)
 
-    def ready(self):
-        return self._ready
-
     def get_events(self, fd):
         return self._fd_to_events.get(fd, 0)
 
     def clear(self):
-        self._ready = False
         self._fd_to_events.clear()
 
 
@@ -61,7 +70,8 @@ class GLibSelector(selectors._BaseSelectorImpl):
     def __init__(self, context):
         super().__init__()
         self._context = context
-        self._source = _SelectorSource()
+        self._main_loop = GLib.MainLoop.new(self._context, False)
+        self._source = _SelectorSource(self._main_loop)
         self._source.attach(self._context)
 
     def close(self):
@@ -89,10 +99,10 @@ class GLibSelector(selectors._BaseSelectorImpl):
                 may_block = False
 
         self._source.clear()
-        while True:
-            self._context.iteration(may_block)
-            if self._source.ready() or not may_block:
-                break
+        if may_block:
+            g_main_loop_run(self._main_loop)
+        else:
+            self._context.iteration(False)
 
         ready = []
         for key in self.get_map().values():
