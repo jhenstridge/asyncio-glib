@@ -24,6 +24,15 @@ To test that the event loop is functional, I have reused parts of the
 standard library test suite to run against the new selector and event
 loop.
 
+One drawback of this implementation strategy is that asyncio callbacks
+will not be serviced if something else iterates the main context such
+as `gtk_dialog_run()` or similar.  This can potentially lead to busy
+waiting until control is passed back to asyncio.
+
+[Gbulb][4] is an alternative implementation that should handle
+recursive main loop invocations, but at present is unmaintained.
+
 [1]: https://docs.python.org/3/library/asyncio.html
 [2]: https://developer.gnome.org/glib/stable/glib-The-Main-Event-Loop.html
 [3]: https://docs.python.org/3/library/selectors.html
+[4]: https://github.com/nhoad/gbulb
