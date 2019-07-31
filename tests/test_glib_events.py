@@ -1,7 +1,10 @@
 import unittest
 
-from test.test_asyncio import utils as test_utils
 from test.test_asyncio.test_events import UnixEventLoopTestsMixin
+try:
+    from test.test_asyncio import utils as test_utils
+except ImportError:
+    from asyncio import test_utils
 
 from asyncio_glib import glib_events
 

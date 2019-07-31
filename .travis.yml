@@ -1,0 +1,23 @@
+language: python
+dist: bionic
+
+python:
+  - "3.6"
+  - "3.7"
+  - "3.8-dev"
+
+addons:
+  apt:
+    packages:
+      - gir1.2-glib-2.0
+      - libffi-dev
+      - libgirepository1.0-dev
+      - libglib2.0-dev
+
+install:
+  # apt addon doesn't seem to be processed with bionic image
+  - sudo apt-get install -y gir1.2-glib-2.0 libffi-dev libgirepository1.0-dev libglib2.0-dev
+  - pip install -r requirements.txt
+
+script:
+  - python setup.py test
