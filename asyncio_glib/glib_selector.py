@@ -27,7 +27,7 @@ class _SelectorSource(GLib.Source):
         self._main_loop = main_loop
 
     def prepare(self):
-        return False, 0
+        return False, -1
 
     def check(self):
         return False
