@@ -1,6 +1,7 @@
-from .glib_events import GLibEventLoopPolicy
+from .glib_events import GLibEventLoop, GLibEventLoopPolicy
 
 
 __all__ = (
+    "GLibEventLoop",
     "GLibEventLoopPolicy",
 )
