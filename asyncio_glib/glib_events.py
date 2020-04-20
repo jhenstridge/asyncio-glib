@@ -18,8 +18,19 @@ class GLibEventLoop(asyncio.SelectorEventLoop):
     def __init__(self, main_context=None):
         if main_context is None:
             main_context = GLib.MainContext.default()
-        selector = glib_selector.GLibSelector(main_context)
+        self._main_loop = GLib.MainLoop.new(main_context, False)
+        selector = glib_selector.GLibSelector(main_context, self._main_loop)
         super().__init__(selector)
+
+    def call_soon(self, *args, **kwargs):
+        if self._main_loop.is_running():
+            self._main_loop.quit()
+        return super().call_soon(*args, **kwargs)
+
+    def call_at(self, *args, **kwargs):
+        if self._main_loop.is_running():
+            self._main_loop.quit()
+        return super().call_at(*args, **kwargs)
 
 
 class GLibEventLoopPolicy(asyncio.DefaultEventLoopPolicy):
