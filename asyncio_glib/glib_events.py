@@ -27,6 +27,11 @@ class GLibEventLoop(asyncio.SelectorEventLoop):
             self._main_loop.quit()
         return super().call_soon(*args, **kwargs)
 
+    def call_at(self, *args, **kwargs):
+        if self._main_loop.is_running():
+            self._main_loop.quit()
+        return super().call_at(*args, **kwargs)
+
 
 class GLibEventLoopPolicy(asyncio.DefaultEventLoopPolicy):
     """An asyncio event loop policy that runs the GLib main loop"""
