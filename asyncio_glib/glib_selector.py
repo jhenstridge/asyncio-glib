@@ -38,6 +38,8 @@ class _SelectorSource(GLib.Source):
             events = self._fd_to_events.setdefault(fd, 0)
             if condition & GLib.IOCondition.IN:
                 events |= selectors.EVENT_READ
+            if condition & GLib.IOCondition.HUP:
+                events |= selectors.EVENT_READ
             if condition & GLib.IOCondition.OUT:
                 events |= selectors.EVENT_WRITE
             self._fd_to_events[fd] = events
@@ -50,6 +52,7 @@ class _SelectorSource(GLib.Source):
         condition = GLib.IOCondition(0)
         if events & selectors.EVENT_READ:
             condition |= GLib.IOCondition.IN
+            condition |= GLib.IOCondition.HUP
         if events & selectors.EVENT_WRITE:
             condition |= GLib.IOCondition.OUT
         self._fd_to_tag[fd] = self.add_unix_fd(fd, condition)
