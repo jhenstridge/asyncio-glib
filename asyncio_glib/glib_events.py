@@ -21,6 +21,11 @@ class GLibEventLoop(asyncio.SelectorEventLoop):
         selector = glib_selector.GLibSelector(main_context)
         super().__init__(selector)
 
+    def create_task(self, *args, **kwargs):
+        result = super().create_task(*args, **kwargs)
+        self._selector._main_loop.quit()
+        return result
+
 
 class GLibEventLoopPolicy(asyncio.DefaultEventLoopPolicy):
     """An asyncio event loop policy that runs the GLib main loop"""
