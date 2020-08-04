@@ -110,3 +110,6 @@ class GLibSelector(selectors._BaseSelectorImpl):
             if events != 0:
                 ready.append((key, events))
         return ready
+
+    def quit(self):
+        self._main_loop.quit()
