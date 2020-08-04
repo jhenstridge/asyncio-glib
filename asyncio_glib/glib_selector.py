@@ -67,10 +67,15 @@ class _SelectorSource(GLib.Source):
 
 class GLibSelector(selectors._BaseSelectorImpl):
 
-    def __init__(self, context):
+    def __init__(self, context, handle_sigint=False):
         super().__init__()
         self._context = context
-        self._main_loop = GLib.MainLoop.new(self._context, False)
+        if handle_sigint:
+            self._main_loop = GLib.MainLoop()
+            self._run = GLib.MainLoop.run
+        else:
+            self._main_loop = GLib.MainLoop.new(self._context, False)
+            self._run = g_main_loop_run
         self._source = _SelectorSource(self._main_loop)
         self._source.attach(self._context)
 
@@ -100,7 +105,7 @@ class GLibSelector(selectors._BaseSelectorImpl):
 
         self._source.clear()
         if may_block:
-            g_main_loop_run(self._main_loop)
+            self._run(self._main_loop)
         else:
             self._context.iteration(False)
 

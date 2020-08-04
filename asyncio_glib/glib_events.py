@@ -15,10 +15,10 @@ __all__ = (
 class GLibEventLoop(asyncio.SelectorEventLoop):
     """An asyncio event loop that runs the GLib main loop"""
 
-    def __init__(self, main_context=None):
+    def __init__(self, main_context=None, handle_sigint=False):
         if main_context is None:
             main_context = GLib.MainContext.default()
-        selector = glib_selector.GLibSelector(main_context)
+        selector = glib_selector.GLibSelector(main_context, handle_sigint)
         self.selector = selector
         super().__init__(selector)
 
