@@ -13,3 +13,6 @@ class GLibSelectorTests(test_selectors.BaseSelectorTestCase):
 
     def test_select_interrupt_exc(self):
         raise unittest.SkipTest("TODO")
+
+    def test_select_interrupt_noraise(self):
+        raise unittest.SkipTest("TODO")
