@@ -15,9 +15,6 @@ class GLibEventLoopTests(UnixEventLoopTestsMixin, test_utils.TestCase):
     def create_event_loop(self):
         return glib_events.GLibEventLoop(main_context=GLib.MainContext.default())
 
-    def test_read_pipe(self):
-        raise unittest.SkipTest("TODO")
-
 
 class GLibEventLoopPolicyTests(unittest.TestCase):
 
