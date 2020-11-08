@@ -7,27 +7,17 @@ __all__ = (
     'GLibSelector',
 )
 
-
-# The override for GLib.MainLoop.run installs a signal wakeup fd,
-# which interferes with asyncio signal handlers.  Try to get the
-# direct version.
-try:
-    g_main_loop_run = super(GLib.MainLoop, GLib.MainLoop).run
-except AttributeError:
-    g_main_loop_run = GLib.MainLoop.run
-
-
 class _SelectorSource(GLib.Source):
     """A GLib source that gathers selector """
 
-    def __init__(self, main_loop):
+    def __init__(self):
         super().__init__()
         self._fd_to_tag = {}
         self._fd_to_events = {}
-        self._main_loop = main_loop
+        self._iteration_timeout = 0
 
     def prepare(self):
-        return False, -1
+        return False, self._iteration_timeout
 
     def check(self):
         return False
@@ -41,7 +31,6 @@ class _SelectorSource(GLib.Source):
             if condition & GLib.IOCondition.OUT:
                 events |= selectors.EVENT_WRITE
             self._fd_to_events[fd] = events
-        self._main_loop.quit()
         return GLib.SOURCE_CONTINUE
 
     def register(self, fd, events):
@@ -70,8 +59,7 @@ class GLibSelector(selectors._BaseSelectorImpl):
     def __init__(self, context):
         super().__init__()
         self._context = context
-        self._main_loop = GLib.MainLoop.new(self._context, False)
-        self._source = _SelectorSource(self._main_loop)
+        self._source = _SelectorSource()
         self._source.attach(self._context)
 
     def close(self):
@@ -89,20 +77,15 @@ class GLibSelector(selectors._BaseSelectorImpl):
         return key
 
     def select(self, timeout=None):
-        may_block = True
-        self._source.set_ready_time(-1)
+        # Calling .set_ready_time() always causes a mainloop iteration to finish.
         if timeout is not None:
-            if timeout > 0:
-                self._source.set_ready_time(
-                    GLib.get_monotonic_time() + int(timeout * 1000000))
-            else:
-                may_block = False
+            # Negative timeout implies an immediate dispatch
+            self._source._iteration_timeout = int(max(0, timeout) * 1000)
+        else:
+            self._source._iteration_timeout = -1
 
         self._source.clear()
-        if may_block:
-            g_main_loop_run(self._main_loop)
-        else:
-            self._context.iteration(False)
+        self._context.iteration(True)
 
         ready = []
         for key in self.get_map().values():
