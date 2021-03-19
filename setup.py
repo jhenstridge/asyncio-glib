@@ -24,5 +24,6 @@ setup(
         "Operating System :: POSIX",
     ],
     install_requires=["PyGObject"],
+    tests_require=["ddt"],
     test_suite="tests",
 )
