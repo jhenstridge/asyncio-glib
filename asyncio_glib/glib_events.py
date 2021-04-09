@@ -20,6 +20,8 @@ class GLibEventLoop(asyncio.SelectorEventLoop):
             main_context = GLib.MainContext.default()
         selector = glib_selector.GLibSelector(main_context)
         super().__init__(selector)
+        # GSource only has timeouts with 1ms accuracy
+        self._clock_resolution = 1e-3
 
 
 class GLibEventLoopPolicy(asyncio.DefaultEventLoopPolicy):
